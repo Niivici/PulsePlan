@@ -1,0 +1,433 @@
+{
+	"Phone":[
+		{
+			"name":"Enjoy 90 Pro Max",
+			"screenWidth":"1272",
+			"screenHeight":"2756",
+			"screenDiagonal":"6.84",
+			"screenDensity":"540",
+			"oneCutoutPath":"M595 44 L676 44 v 82 h -81 Z",
+			"visible":true
+		},
+		{
+			"name":"Enjoy 90 Plus",
+			"screenWidth":"720",
+			"screenHeight":"1604",
+			"screenDiagonal":"6.67",
+			"screenDensity":"320",
+			"oneCutoutPath":"M336 19 L383 19 v 41 h -47 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 15 Pro、nova 15 Ultra",
+			"screenWidth":"1320",
+			"screenHeight":"2856",
+			"screenDiagonal":"6.84",
+			"screenDensity":"560",
+			"oneCutoutPath":"M517 45 L802 45 v 103 h -285 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 15",
+			"screenWidth":"1084",
+			"screenHeight":"2412",
+			"screenDiagonal":"6.7",
+			"screenDensity":"480",
+			"oneCutoutPath":"M504 16 L580 16 v 76 h -76 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 80 Pro Max、Mate 80 RS",
+			"screenWidth":"1320",
+			"screenHeight":"2848",
+			"screenDiagonal":"6.9",
+			"screenDensity":"540",
+			"oneCutoutPath":"M484 36 L836 36 v 84 h -352 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 80、Mate 80 Pro",
+			"screenWidth":"1280",
+			"screenHeight":"2832",
+			"screenDiagonal":"6.75",
+			"screenDensity":"560",
+			"oneCutoutPath":"M464 38 L816 38 v 84 h -352 Z",
+			"visible":true
+		},
+		{
+			"name":"Pura 80 Pro、Pura 80 Pro+、Pura 80 Ultra",
+			"screenWidth":"1276",
+			"screenHeight":"2848",
+			"screenDiagonal":"6.8",
+			"screenDensity":"560",
+			"oneCutoutPath":"M600 44 L676 44 v 76 h -76 Z",
+			"visible":true
+		},
+		{
+			"name":"Pura 80",
+			"screenWidth":"1256",
+			"screenHeight":"2760",
+			"screenDiagonal":"6.6",
+			"screenDensity":"560",
+			"oneCutoutPath":"M591 34 L665 34 v 74 h -74 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 70 Pro、Mate 70 Pro+、Mate 70 RS",
+			"screenWidth":"1316",
+			"screenHeight":"2832",
+			"screenDiagonal":"6.9",
+			"screenDensity":"560",
+			"oneCutoutPath":"M512 37 L804 37 v 83 h -292 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 70",
+			"screenWidth":"1216",
+			"screenHeight":"2688",
+			"screenDiagonal":"6.7",
+			"screenDensity":"520",
+			"oneCutoutPath":"M572 23 L644 23 v 72 h -72 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 70 Air",
+			"screenWidth":"1320",
+			"screenHeight":"2760",
+			"screenDiagonal":"6.96",
+			"screenDensity":"520",
+			"oneCutoutPath":"M618 46 L700 46 v 82 h -82 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 60 Pro、Mate 60 Pro+、Mate 60 RS",
+			"screenWidth":"1260",
+			"screenHeight":"2720",
+			"screenDiagonal":"6.82",
+			"screenDensity":"520",
+			"oneCutoutPath":"M494 36 L767 36 v 72 h -273 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate 60",
+			"screenWidth":"1216",
+			"screenHeight":"2688",
+			"screenDiagonal":"6.69",
+			"screenDensity":"520",
+			"oneCutoutPath":"M572 24 L643 24 v 69 h -71 Z",
+			"visible":true
+		},
+		{
+			"name":"Pura 70 Pro、Pura 70 Pro+、Pura 70 Ultra",
+			"screenWidth":"1260",
+			"screenHeight":"2844",
+			"screenDiagonal":"6.8",
+			"screenDensity":"540",
+			"oneCutoutPath":"M592 39 L668 39 v 76 h -76 Z",
+			"visible":true
+		},
+		{
+			"name":"Pura 70",
+			"screenWidth":"1256",
+			"screenHeight":"2760",
+			"screenDiagonal":"6.6",
+			"screenDensity":"540",
+			"oneCutoutPath":"M591 34 L665 34 v 74 h -74 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 14 Ultra",
+			"screenWidth":"1272",
+			"screenHeight":"2860",
+			"screenDiagonal":"6.81",
+			"screenDensity":"560",
+			"oneCutoutPath":"M496 52 L776 52 v 92 h -280 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 14 Pro",
+			"screenWidth":"1224",
+			"screenHeight":"2776",
+			"screenDiagonal":"6.78",
+			"screenDensity":"540",
+			"oneCutoutPath":"M473 46 L750 46 v 88 h -277 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 14",
+			"screenWidth":"1084",
+			"screenHeight":"2412",
+			"screenDiagonal":"6.7",
+			"screenDensity":"480",
+			"oneCutoutPath":"M506 20 L578 20 v 71 h -72 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 13 Pro",
+			"screenWidth":"1224",
+			"screenHeight":"2776",
+			"screenDiagonal":"6.76",
+			"screenDensity":"540",
+			"oneCutoutPath":"M477 47 L747 47 v 86 h -270 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 13",
+			"screenWidth":"1084",
+			"screenHeight":"2412",
+			"screenDiagonal":"6.7",
+			"screenDensity":"480",
+			"oneCutoutPath":"M506 20 L578 20 v 71 h -72 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 12 Pro、nova 12 Ultra",
+			"screenWidth":"1224",
+			"screenHeight":"2776",
+			"screenDiagonal":"6.76",
+			"screenDensity":"540",
+			"oneCutoutPath":"M477 47 L747 47 v 86 h -270 Z",
+			"visible":true
+		},
+		{
+			"name":"nova 12",
+			"screenWidth":"1084",
+			"screenHeight":"2412",
+			"screenDiagonal":"6.7",
+			"screenDensity":"480",
+			"oneCutoutPath":"M506 20 L578 20 v 71 h -72 Z",
+			"visible":true
+		},
+		{
+			"name":"Pocket 2",
+			"screenWidth":"1136",
+			"screenHeight":"2690",
+			"screenDiagonal":"6.94",
+			"screenDensity":"500",
+			"oneCutoutPath":"M533 23 L602 23 v 69 h -69 Z",
+			"visible":true
+		},
+		{
+			"name":"nova flip、nova flip S",
+			"screenWidth":"1136",
+			"screenHeight":"2690",
+			"screenDiagonal":"6.94",
+			"screenDensity":"500",
+			"oneCutoutPath":"M533 23 L602 23 v 69 h -69 Z",
+			"visible":true
+		},
+		{
+			"name":"Customize",
+			"screenWidth":"1316",
+			"screenHeight":"2832",
+			"screenDiagonal":"6.9",
+			"screenDensity":"560",
+			"oneCutoutPath":"",
+			"visible":true
+		}
+	],
+	"Tablet":[
+		{
+			"name":"MatePad Pro 11",
+			"screenWidth":"2560",
+			"screenHeight":"1600",
+			"screenDiagonal":"11",
+			"screenDensity":"360",
+			"oneCutoutPath":"M20 20 L67 20 v 47 h -47 Z",
+			"visible":true
+		},
+		{
+			"name":"MatePad Pro 12",
+			"screenWidth":"2800",
+			"screenHeight":"1840",
+			"screenDiagonal":"12.2",
+			"screenDensity":"360",
+			"oneCutoutPath":"M0 0 L0 0 v 0 h -0 Z",
+			"visible":true
+		},
+		{
+			"name":"MatePad Pro 13",
+			"screenWidth":"2880",
+			"screenHeight":"1920",
+			"screenDiagonal":"13.2",
+			"screenDensity":"320",
+			"oneCutoutPath":"M1308 0 L 1572 0 V 36 h -264 Z",
+			"visible":true
+		},
+		{
+			"name":"MatePad 11 S",
+			"screenWidth":"2800",
+			"screenHeight":"1840",
+			"screenDiagonal":"11.5",
+			"screenDensity":"400",
+			"oneCutoutPath":"M0 0 L0 0 v 0 h -0 Z",
+			"visible":true
+		},
+		{
+			"name":"MatePad Air 12",
+			"screenWidth":"2800",
+			"screenHeight":"1840",
+			"screenDiagonal":"12",
+			"screenDensity":"360",
+			"oneCutoutPath":"M0 0 L0 0 v 0 h -0 Z",
+			"visible":true
+		},
+		{
+			"name":"Customize",
+			"screenWidth":"2560",
+			"screenHeight":"1600",
+			"screenDiagonal":"11",
+			"screenDensity":"360",
+			"oneCutoutPath":"",
+			"visible":true
+		}
+	],
+	"2in1":[
+		{
+			"name":"MateBook Pro",
+			"screenWidth":"3120",
+			"screenHeight":"2080",
+			"screenDiagonal":"14.2",
+			"screenDensity":"304",
+			"oneCutoutPath":"",
+			"visible":true
+		},
+		{
+			"name":"Customize",
+			"screenWidth":"3120",
+			"screenHeight":"2080",
+			"screenDiagonal":"14.2",
+			"screenDensity":"304",
+			"oneCutoutPath":"",
+			"visible":true
+		}
+	],
+	"Foldable":[
+		{
+			"name":"Mate X5",
+			"screenWidth":"2224",
+			"screenHeight":"2496",
+			"screenDiagonal":"7.85",
+			"screenDensity":"500",
+			"outerScreenWidth":"1080",
+			"outerScreenHeight":"2504",
+			"outerScreenDiagonal":"6.4",
+			"oneCutoutPath":"M2109 28 L2178 28 v 69 h -69 Z",
+			"twoCutoutPath":"M507 18 L573 18 v 66 h -66 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate X6",
+			"screenWidth":"2240",
+			"screenHeight":"2440",
+			"screenDiagonal":"7.93",
+			"screenDensity":"500",
+			"outerScreenWidth":"1080",
+			"outerScreenHeight":"2440",
+			"outerScreenDiagonal":"6.45",
+			"oneCutoutPath":"M2121 30 L2191 30 v 70 h -70 Z",
+			"twoCutoutPath":"M510 28 L574 28 v 64 h -64 Z",
+			"visible":true
+		},
+		{
+			"name":"Mate X7",
+			"screenWidth":"2210",
+			"screenHeight":"2416",
+			"screenDiagonal":"8",
+			"screenDensity":"500",
+			"outerScreenWidth":"1080",
+			"outerScreenHeight":"2444",
+			"outerScreenDiagonal":"6.49",
+			"oneCutoutPath":"M2092 28 L2162 28 v 70 h -70 Z",
+			"twoCutoutPath":"M508 24 L572 24 v 64 h -64 Z",
+			"visible":true
+		},
+		{
+			"name":"Customize",
+			"screenWidth":"2224",
+			"screenHeight":"2496",
+			"screenDiagonal":"7.85",
+			"screenDensity":"500",
+			"outerScreenWidth":"1080",
+			"outerScreenHeight":"2504",
+			"outerScreenDiagonal":"6.4",
+			"oneCutoutPath":"",
+			"twoCutoutPath":"",
+			"visible":true
+		}
+	],
+	"WideFold":[
+		{
+			"name":"Pura X",
+			"screenWidth":"1320",
+			"screenHeight":"2120",
+			"screenDiagonal":"6.3",
+			"screenDensity":"480",
+			"outerScreenWidth":"980",
+			"outerScreenHeight":"980",
+			"outerScreenDiagonal":"3.5",
+			"oneCutoutPath":"M626 24 L694 24 v 68 h -68 Z",
+			"visible":false
+		}
+	],
+	"TripleFold":[
+		{
+			"name":"Mate XT",
+			"screenWidth":"3184",
+			"screenHeight":"2232",
+			"screenDiagonal":"10.2",
+			"screenDensity":"460",
+			"outerScreenWidth":"2048",
+			"outerScreenHeight":"2232",
+			"outerScreenDiagonal":"7.9",
+			"outerDoubleScreenWidth":"1008",
+			"outerDoubleScreenHeight":"2232",
+			"outerDoubleScreenDiagonal":"6.4",
+			"oneCutoutPath":"M479 21 L544 21 v 65 h -65 Z",
+			"visible":false
+		}
+	],
+	"2in1 Foldable":[
+		{
+			"name":"MateBook Fold",
+			"screenWidth":"3296",
+			"screenHeight":"2472",
+			"screenDiagonal":"18",
+			"screenDensity":"288",
+			"outerScreenWidth":"2472",
+			"outerScreenHeight":"1648",
+			"outerScreenDiagonal":"13",
+			"visible":false
+		}
+	],
+	"TV":[
+		{
+			"name":"TV",
+			"screenWidth":"3840",
+			"screenHeight":"2160",
+			"screenDiagonal":"98",
+			"screenDensity":"480",
+			"visible":false
+		}
+	],
+	"Wearable":[
+		{
+			"name":"Wearable",
+			"screenWidth":"466",
+			"screenHeight":"466",
+			"screenDiagonal":"1.6",
+			"screenDensity":"320",
+			"visible":false
+		}
+	],
+	"WearableKid":[
+		{
+			"name":"WearableKid",
+			"screenWidth":"480",
+			"screenHeight":"408",
+			"screenDiagonal":"1.6",
+			"screenDensity":"320",
+			"visible":false
+		}
+	]
+}

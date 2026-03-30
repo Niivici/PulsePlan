@@ -1,0 +1,16 @@
+﻿{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "AI 个性化日程规划模块"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "PulsePlan 鸿蒙原型入口"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "PulsePlan"
+    }
+  ]
+}
