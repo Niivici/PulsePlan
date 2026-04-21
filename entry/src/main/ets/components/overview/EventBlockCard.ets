@@ -17,6 +17,8 @@ export struct EventBlockCard {
   selected: boolean = false;
   onPress: () => void = () => {
   };
+  @State cardScale: number = 1;
+  @State shadowRadius: number = 0;
 
   build() {
     Column({ space: 12 }) {
@@ -70,6 +72,29 @@ export struct EventBlockCard {
     .backgroundColor(this.selected ? '#17334A' : PulsePalette.surface)
     .border({ width: this.selected ? 1.5 : 1, color: this.selected ? this.eventBlock.color : PulsePalette.border })
     .borderRadius(26)
+    .scale({ x: this.cardScale, y: this.cardScale })
+    .shadow({
+      radius: this.shadowRadius,
+      color: this.eventBlock.color + '30',
+      offsetX: 0,
+      offsetY: 0
+    })
+    .animation({
+      duration: 200,
+      curve: Curve.EaseInOut
+    })
+    .hitTestBehavior(HitTestMode.Default)
+    .onHover((isHover: boolean) => {
+      this.cardScale = isHover ? 1.02 : 1;
+      this.shadowRadius = isHover ? 16 : 0;
+    })
+    .onTouch((event: TouchEvent) => {
+      if (event.type === TouchType.Down) {
+        this.cardScale = 0.96;
+      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+        this.cardScale = 1;
+      }
+    })
     .onClick(() => {
       this.onPress();
     })

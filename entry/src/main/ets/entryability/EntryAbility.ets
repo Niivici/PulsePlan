@@ -28,6 +28,25 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
+      
+      // 配置窗口实现沉浸式显示，保留状态栏
+      try {
+        const windowClass = windowStage.getMainWindowSync();
+        // 设置窗口布局为全屏，延伸到系统状态栏和导航栏区域
+        windowClass.setWindowLayoutFullScreen(true);
+        // 启用状态栏和导航栏
+        windowClass.setWindowSystemBarEnable(['status', 'navigation']);
+        // 设置状态栏和导航栏为透明
+        windowClass.setWindowSystemBarProperties({
+          statusBarColor: '#00000000',
+          statusBarContentColor: '#F6FBFF',
+          navigationBarColor: '#00000000',
+          navigationBarContentColor: '#F6FBFF'
+        });
+        hilog.info(DOMAIN, 'testTag', 'Succeeded in setting immersive mode.');
+      } catch (windowErr) {
+        hilog.error(DOMAIN, 'testTag', 'Failed to set window properties. Cause: %{public}s', JSON.stringify(windowErr));
+      }
     });
   }
 

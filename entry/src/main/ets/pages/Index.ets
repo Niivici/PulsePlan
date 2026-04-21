@@ -1,4 +1,4 @@
-﻿import { PulsePlanHome } from '../prototype/PulsePlanHome';
+﻿﻿﻿﻿import { PulsePlanHome } from '../prototype/PulsePlanHome';
 
 @Entry
 @Component
@@ -9,5 +9,6 @@ struct Index {
     }
     .width('100%')
     .height('100%')
+    .justifyContent(FlexAlign.Start)
   }
 }

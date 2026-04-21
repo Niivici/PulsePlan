@@ -1,4 +1,4 @@
-﻿import { MonthCalendar } from './MonthCalendar';
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import { MonthCalendar } from './MonthCalendar';
 import { TimelineBoard } from './TimelineBoard';
 import {
   EventBlock,
@@ -237,6 +237,74 @@ export struct ScheduleSection {
   }
 
   @Builder
+  private buildWeatherWidget(): void {
+    if (this.currentViewIndex === VIEW_DAY) {
+      Row({ space: 12 }) {
+        Column({ space: 2 }) {
+          Text('☀️')
+            .fontSize(24)
+          Text('晴朗')
+            .fontSize(10)
+            .fontColor(PulsePalette.textSecondary)
+        }
+        .alignItems(HorizontalAlign.Center)
+
+        Column({ space: 4 }) {
+          Text('26°')
+            .fontSize(20)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(PulsePalette.textPrimary)
+          Text('湿度 45% · 微风')
+            .fontSize(9)
+            .fontColor(PulsePalette.textMuted)
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        Column({ space: 2 }) {
+          Text('今日')
+            .fontSize(9)
+            .fontColor(PulsePalette.textMuted)
+          Text('宜运动')
+            .fontSize(10)
+            .fontColor(PulsePalette.accentLeaf)
+        }
+        .alignItems(HorizontalAlign.End)
+      }
+      .width('100%')
+      .padding(12)
+      .backgroundColor('#0E1821')
+      .border({ width: 1, color: '#182734' })
+      .borderRadius(16)
+    }
+  }
+
+  @Builder
+  private buildQuickAddButton(): void {
+    if (this.currentViewIndex === VIEW_DAY) {
+      Button() {
+        Row({ space: 6 }) {
+          Text('+')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+          Text('添加日程')
+            .fontSize(12)
+            .fontWeight(FontWeight.Medium)
+        }
+      }
+      .type(ButtonType.Capsule)
+      .height(48)
+      .padding({ left: 18, right: 22 })
+      .backgroundColor(PulsePalette.accentSky)
+      .fontColor(PulsePalette.blackText)
+      .shadow({ radius: 16, color: '#2A7BA750', offsetX: 0, offsetY: 6 })
+      .onClick(() => {
+        this.onCreatePlan();
+      })
+    }
+  }
+
+  @Builder
   private buildSelectedFooter(): void {
     if (this.getSelectedSchedule() && this.getSelectedEventBlock()) {
       Row() {
@@ -287,12 +355,29 @@ export struct ScheduleSection {
   build() {
     Column({ space: 10 }) {
       this.buildToolbar()
+      
+      if (this.currentViewIndex === VIEW_DAY) {
+        Column({ space: 10 }) {
+          this.buildWeatherWidget()
+        }
+        .width('100%')
+      }
+      
       Column() {
         this.buildCurrentView()
       }
       .opacity(this.contentOpacity)
       .translate({ x: 0, y: this.contentOffsetY })
       .animation({ duration: 220, curve: Curve.Friction })
+      
+      if (this.currentViewIndex === VIEW_DAY) {
+        Row() {
+          Blank()
+          this.buildQuickAddButton()
+        }
+        .width('100%')
+      }
+      
       this.buildSelectedFooter()
     }
     .width('100%')

@@ -1,4 +1,4 @@
-﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
   BOARD_END_MINUTE,
   BOARD_HEIGHT,
   BOARD_START_MINUTE,
@@ -33,6 +33,7 @@ export struct TimelineBoard {
   private bodyVerticalScroller: Scroller = new Scroller();
   @State horizontalOffset: number = 0;
   @State verticalOffset: number = 0;
+  @State draggingScheduleId: number = -1;
   private autoScrollTask: number = -1;
   private lastTimelineSignature: string = '';
 
@@ -142,6 +143,19 @@ export struct TimelineBoard {
     this.bodyVerticalScroller.scrollTo({ xOffset: 0, yOffset: targetY });
   }
 
+  private handleBlockDragStart(scheduleId: number): void {
+    this.draggingScheduleId = scheduleId;
+  }
+
+  private handleBlockDragEnd(): void {
+    this.draggingScheduleId = -1;
+  }
+
+  private getDayForSchedule(scheduleId: number): string | undefined {
+    const item: ScheduleItem | undefined = this.scheduleItems.find((s: ScheduleItem) => s.id === scheduleId);
+    return item ? item.dayKey : undefined;
+  }
+
   private handleBodyHorizontalScroll(_: number): void {
     const currentOffset = this.bodyHorizontalScroller.currentOffset();
     this.horizontalOffset = this.clampHorizontalOffset(currentOffset.xOffset);
@@ -176,14 +190,20 @@ export struct TimelineBoard {
   private buildTimeCell(hour: number): void {
     Column() {
       Text(formatMinuteLabel(hour * 60))
-        .fontSize(this.singleDay ? 9 : 8)
+        .fontSize(this.singleDay ? 11 : 8)
         .fontWeight(FontWeight.Medium)
         .fontColor('#7C8D9B')
+      if (this.singleDay) {
+        Text('00')
+          .fontSize(8)
+          .fontColor('#4A5C6A')
+      }
     }
     .width(TIME_RAIL_WIDTH)
     .height(60 * MINUTE_HEIGHT)
     .alignItems(HorizontalAlign.Center)
     .justifyContent(FlexAlign.Start)
+    .padding({ top: 4 })
   }
 
   @Builder
@@ -195,7 +215,7 @@ export struct TimelineBoard {
             Row()
               .height(1)
               .width('100%')
-              .backgroundColor(this.isToday(day.dateKey) ? '#21455C' : '#13222C')
+              .backgroundColor(this.isToday(day.dateKey) ? '#21455C' : (this.singleDay ? '#1A2A36' : '#13222C'))
             Row()
               .height(60 * MINUTE_HEIGHT - 1)
           }
@@ -203,6 +223,19 @@ export struct TimelineBoard {
       }
       .width(this.getColumnWidth())
       .height(BOARD_HEIGHT)
+
+      if (this.singleDay) {
+        ForEach(HOURS, (hour: number) => {
+          if (hour % 2 === 0) {
+            Row()
+              .width(this.getColumnWidth())
+              .height(60 * MINUTE_HEIGHT)
+              .backgroundColor('#0C1720')
+              .position({ x: 0, y: toBoardOffset(hour * 60) })
+              .opacity(0.4)
+          }
+        }, (hour: number) => `${hour}`)
+      }
 
       if (this.isToday(day.dateKey)) {
         Column()
@@ -220,16 +253,19 @@ export struct TimelineBoard {
           columnGap: DAY_COLUMN_GAP,
           onSelect: this.onSelect,
           onMove: this.onMove,
-          onResize: this.onResize
+          onResize: this.onResize,
+          onBlockDragStart: this.handleBlockDragStart.bind(this),
+          onBlockDragEnd: this.handleBlockDragEnd.bind(this)
         })
       }, (item: ScheduleItem) => `${item.id}-${item.dayKey}-${item.startMinute}-${item.endMinute}`)
     }
     .width(this.getColumnWidth())
     .height(BOARD_HEIGHT)
-    .backgroundColor(this.isToday(day.dateKey) ? '#0D1B25' : '#081119')
-    .border({ width: 1, color: this.isToday(day.dateKey) ? '#1E4259' : '#0F1A23' })
-    .borderRadius(10)
+    .backgroundColor(this.isToday(day.dateKey) ? '#0D1B25' : (this.singleDay ? '#0A141C' : '#081119'))
+    .border({ width: 1, color: this.isToday(day.dateKey) ? '#1E4259' : (this.singleDay ? '#14232F' : '#0F1A23') })
+    .borderRadius(this.singleDay ? 14 : 10)
     .clip(false)
+    .zIndex(this.getDayForSchedule(this.draggingScheduleId) === day.dateKey ? 9999 : 1)
   }
 
   build() {

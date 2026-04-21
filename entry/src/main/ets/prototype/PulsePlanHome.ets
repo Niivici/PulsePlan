@@ -1,4 +1,4 @@
-﻿import { AISection } from '../components/ai/AISection';
+﻿﻿﻿﻿import { AISection } from '../components/ai/AISection';
 import { AchievementSection } from '../components/achievement/AchievementSection';
 import { FloatingNavBar } from '../components/navigation/FloatingNavBar';
 import { OverviewSection } from '../components/overview/OverviewSection';
@@ -54,10 +54,17 @@ export struct PulsePlanHome {
   @State scheduleItems: ScheduleItem[] = createSeedSchedules(createSeedEventBlocks());
   @State reminders: ReminderItem[] = createSeedReminders(createSeedSchedules(createSeedEventBlocks()));
   @State inputText: string = '下周三准备季度汇报，晚间预留 30 分钟复盘';
+  @State lastPromptText: string = '';
   @State selectedScheduleId: number = 203;
   @State activeSceneMode: string = '';
   @State aiBanner: string = 'AI 已根据最近两周的拖拽与完成率，默认预留 20 分钟缓冲。';
+  @State aiDetailMode: boolean = false;
+  @State aiDetailShellVisible: boolean = false;
+  private aiDetailShellTask: number = -1;
   private pageScroller: Scroller = new Scroller();
+  @State topBarOpacity: number = 0.4;
+  @State lastScrollOffset: number = 0;
+  private readonly statusBarHeight: number = 44;
 
   aboutToAppear(): void {
     const seedBlocks: EventBlock[] = createSeedEventBlocks();
@@ -67,6 +74,10 @@ export struct PulsePlanHome {
     this.reminders = createSeedReminders(seedSchedules);
     this.selectedScheduleId = seedSchedules[2].id;
     track('page_open', 'pulseplan_single_page_prototype');
+  }
+
+  aboutToDisappear(): void {
+    this.clearAIDetailShellTask();
   }
 
   private scrollToPageTop(): void {
@@ -132,6 +143,47 @@ export struct PulsePlanHome {
       return '个人中心';
     }
     return '总览';
+  }
+
+  private isAIDetailPage(): boolean {
+    return this.currentNavIndex === NAV_AI && (this.aiDetailMode || this.aiDetailShellVisible);
+  }
+
+  private clearAIDetailShellTask(): void {
+    if (this.aiDetailShellTask >= 0) {
+      clearTimeout(this.aiDetailShellTask);
+      this.aiDetailShellTask = -1;
+    }
+  }
+
+  private resetAIDetailShell(): void {
+    this.clearAIDetailShellTask();
+    this.aiDetailMode = false;
+    this.aiDetailShellVisible = false;
+  }
+
+  private openAIDetail(prompt: string): void {
+    if (prompt.length > 0) {
+      this.inputText = prompt;
+    }
+    this.clearAIDetailShellTask();
+    this.aiDetailShellVisible = true;
+    this.aiDetailMode = true;
+    this.scrollToPageTop();
+    track('ai_detail_open', prompt.length > 0 ? prompt : 'empty');
+  }
+
+  private closeAIDetail(): void {
+    this.clearAIDetailShellTask();
+    this.aiDetailMode = false;
+    this.scrollToPageTop();
+    track('ai_detail_close', 'back');
+    this.aiDetailShellTask = setTimeout(() => {
+      if (this.currentNavIndex === NAV_AI && !this.aiDetailMode) {
+        this.aiDetailShellVisible = false;
+      }
+      this.aiDetailShellTask = -1;
+    }, 320);
   }
 
   private changeView(index: number): void {
@@ -230,15 +282,16 @@ export struct PulsePlanHome {
     if (this.inputText.trim().length === 0) {
       return;
     }
-    const plan = createPlanFromPrompt(this.inputText, this.selectedDateKey, this.scheduleItems);
+    const normalizedPrompt: string = this.inputText.trim();
+    const plan = createPlanFromPrompt(normalizedPrompt, this.selectedDateKey, this.scheduleItems);
     this.eventBlocks = [plan.eventBlock, ...this.eventBlocks];
     this.scheduleItems = [...this.scheduleItems, ...plan.scheduleItems]
       .sort((left: ScheduleItem, right: ScheduleItem) => left.dayKey === right.dayKey ? left.startMinute - right.startMinute : left.dayKey.localeCompare(right.dayKey));
     this.reminders = [...plan.reminders, ...this.reminders].slice(0, 12);
     this.selectedScheduleId = plan.scheduleItems[0].id;
+    this.lastPromptText = normalizedPrompt;
     this.aiBanner = `AI 已完成 ${plan.scheduleItems.length} 个日程块编排，并预留 ${plan.bufferMinutes} 分钟缓冲。`;
     this.inputText = '';
-    this.currentNavIndex = NAV_SCHEDULE;
     this.scrollToPageTop();
     track('ai_plan_generated', plan.eventBlock.title);
   }
@@ -260,6 +313,7 @@ export struct PulsePlanHome {
       completed: false
     };
     this.scheduleItems = rebalanceDaySchedules([...this.scheduleItems, urgentItem], this.selectedDateKey);
+    this.lastPromptText = '今天插入一个紧急任务，尽量少打乱原计划';
     this.selectedScheduleId = urgentItem.id;
     this.aiBanner = '应急插入完成，周视图已自动重排。';
     track('emergency_inserted', this.selectedDateKey);
@@ -429,10 +483,15 @@ export struct PulsePlanHome {
     } else if (this.currentNavIndex === NAV_AI) {
       AISection({
         inputText: this.inputText,
+        lastPromptText: this.lastPromptText,
         selectedDateKey: this.selectedDateKey,
         selectedScheduleId: this.selectedScheduleId,
         eventBlocks: this.eventBlocks,
         scheduleItems: this.scheduleItems,
+        reminders: this.reminders,
+        activeSceneMode: this.activeSceneMode,
+        aiBanner: this.aiBanner,
+        detailMode: this.aiDetailMode,
         onInputChange: (value: string) => {
           this.inputText = value;
         },
@@ -441,6 +500,27 @@ export struct PulsePlanHome {
         },
         onEmergencyInsert: () => {
           this.handleEmergencyInsert();
+        },
+        onOpenSchedule: () => {
+          this.resetAIDetailShell();
+          this.currentNavIndex = NAV_SCHEDULE;
+          this.scrollToPageTop();
+          track('nav_changed', 'schedule_from_ai');
+        },
+        onLaunchScene: () => {
+          this.handleLaunchSceneMode();
+        },
+        onQuickLaunch: () => {
+          this.handleQuickLaunch();
+        },
+        onToggleComplete: () => {
+          this.handleToggleComplete();
+        },
+        onEnterDetail: (prompt: string) => {
+          this.openAIDetail(prompt);
+        },
+        onCloseDetail: () => {
+          this.closeAIDetail();
         }
       })
     } else if (this.currentNavIndex === NAV_ACHIEVEMENT) {
@@ -482,27 +562,71 @@ export struct PulsePlanHome {
           .borderRadius(130)
           .position({ x: 180, y: 340 })
 
-        Scroll(this.pageScroller) {
-          Column({ space: 18 }) {
-            this.buildTopBanner()
+        if (this.isAIDetailPage()) {
+          Column() {
             this.buildCurrentSection()
           }
           .width('100%')
-          .padding({ left: 16, right: 16, top: 18, bottom: 92 })
+          .height('100%')
+          .padding({ left: 0, right: 0, top: this.statusBarHeight + 18, bottom: 0 })
+        } else if (this.currentNavIndex === NAV_AI) {
+          Column({ space: 18 }) {
+            this.buildCurrentSection()
+          }
+          .width('100%')
+          .height('100%')
+          .padding({ left: 16, right: 16, top: this.statusBarHeight + 18, bottom: 76 })
+        } else {
+          Scroll(this.pageScroller) {
+            Column({ space: 18 }) {
+              if (this.currentNavIndex !== NAV_AI) {
+                this.buildTopBanner()
+              }
+              this.buildCurrentSection()
+            }
+            .width('100%')
+            .padding({ left: 16, right: 16, top: this.statusBarHeight + 18, bottom: 76 })
+          }
+          .scrollBar(BarState.Off)
+          .onScroll((xOffset: number, yOffset: number) => {
+            const currentOffset = this.pageScroller.currentOffset().yOffset;
+            if (currentOffset > this.lastScrollOffset) {
+              this.topBarOpacity = Math.min(0.8, this.topBarOpacity + 0.02);
+            } else if (currentOffset < this.lastScrollOffset) {
+              this.topBarOpacity = Math.max(0.2, this.topBarOpacity - 0.02);
+            }
+            this.lastScrollOffset = currentOffset;
+          })
         }
-        .scrollBar(BarState.Off)
+      }
+      .width('100%')
+      .height('100%')
+
+      if (!this.isAIDetailPage()) {
+        Column()
+          .width('100%')
+          .height(this.statusBarHeight)
+          .position({ x: 0, y: 0 })
+          .backgroundColor(PulsePalette.background)
+          .opacity(this.topBarOpacity)
+          .backgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THIN)
       }
 
       FloatingNavBar({
         items: NAV_ITEMS,
         currentIndex: this.currentNavIndex,
         onChange: (index: number) => {
+          this.resetAIDetailShell();
           this.currentNavIndex = index;
           this.scrollToPageTop();
+          this.topBarOpacity = 0.4;
           track('nav_changed', NAV_ITEMS[index].key);
         }
       })
-      .margin({ left: 16, right: 16, bottom: 16 })
+      .translate({ x: 0, y: this.isAIDetailPage() ? 180 : 0 })
+      .opacity(this.isAIDetailPage() ? 0 : 1)
+      .animation({ duration: 380, curve: Curve.Friction })
+      .margin({ left: 16, right: 16, bottom: 8 })
     }
   }
 }

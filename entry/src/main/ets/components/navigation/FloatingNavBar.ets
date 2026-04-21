@@ -1,4 +1,4 @@
-﻿import { NavItem } from '../../common/PulsePlanModels';
+﻿﻿﻿﻿import { NavItem } from '../../common/PulsePlanModels';
 import { PulsePalette } from '../../common/PulsePlanTheme';
 
 @Component
@@ -45,27 +45,27 @@ export struct FloatingNavBar {
       Column()
         .width(18)
         .height(16)
-        .border({ width: 1.6, color: active ? '#0A1622' : '#E8F0F7' })
+        .border({ width: 1.6, color: active ? PulsePalette.textPrimary : '#E8F0F7' })
         .borderRadius(4)
         .position({ x: 0, y: 2 })
 
       Row({ space: 4 }) {
-        Column().width(2.5).height(4.5).borderRadius(1.2).backgroundColor(active ? '#0A1622' : '#E8F0F7')
-        Column().width(2.5).height(4.5).borderRadius(1.2).backgroundColor(active ? '#0A1622' : '#E8F0F7')
+        Column().width(2.5).height(4.5).borderRadius(1.2).backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
+        Column().width(2.5).height(4.5).borderRadius(1.2).backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
       }
       .position({ x: 6, y: 0 })
 
       Row()
         .width(18)
         .height(3.2)
-        .backgroundColor(active ? '#0A1622' : '#E8F0F7')
+        .backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
         .position({ x: 0, y: 7 })
         .opacity(0.9)
 
       Row({ space: 2.5 }) {
-        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? '#2D6A8A' : '#8BA4B8')
-        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? '#2D6A8A' : '#8BA4B8')
-        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? '#2D6A8A' : '#8BA4B8')
+        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? PulsePalette.accentSky : '#8BA4B8')
+        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? PulsePalette.accentSky : '#8BA4B8')
+        Column().width(3.5).height(3.5).borderRadius(1.8).backgroundColor(active ? PulsePalette.accentSky : '#8BA4B8')
       }
       .position({ x: 2.2, y: 12 })
     }
@@ -79,16 +79,16 @@ export struct FloatingNavBar {
       Text('✦')
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .fontColor(active ? '#0A1622' : '#FFFFFF')
+        .fontColor(active ? PulsePalette.textPrimary : '#FFFFFF')
       Circle()
         .width(3.5)
         .height(3.5)
-        .fill(active ? '#2D6A8A' : '#9DE5FF')
+        .fill(active ? PulsePalette.accentSky : '#9DE5FF')
         .position({ x: 12, y: 2 })
       Circle()
         .width(3)
         .height(3)
-        .fill(active ? '#2D6A8A' : '#9DE5FF')
+        .fill(active ? PulsePalette.accentSky : '#9DE5FF')
         .position({ x: 3, y: 13 })
     }
     .width(18)
@@ -98,9 +98,9 @@ export struct FloatingNavBar {
   @Builder
   private buildAchievementIcon(active: boolean): void {
     Row({ space: 2.5 }) {
-      Column().width(3.5).height(7).borderRadius(2.5).backgroundColor(active ? '#0A1622' : '#E8F0F7')
-      Column().width(3.5).height(11).borderRadius(2.5).backgroundColor(active ? '#0A1622' : '#E8F0F7')
-      Column().width(3.5).height(15).borderRadius(2.5).backgroundColor(active ? '#0A1622' : '#E8F0F7')
+      Column().width(3.5).height(7).borderRadius(2.5).backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
+      Column().width(3.5).height(11).borderRadius(2.5).backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
+      Column().width(3.5).height(15).borderRadius(2.5).backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
     }
     .height(18)
     .alignItems(VerticalAlign.Bottom)
@@ -112,13 +112,13 @@ export struct FloatingNavBar {
       Circle()
         .width(7)
         .height(7)
-        .fill(active ? '#0A1622' : '#E8F0F7')
+        .fill(active ? PulsePalette.textPrimary : '#E8F0F7')
         .position({ x: 5.5, y: 1.5 })
 
       Column()
         .width(16)
         .height(9)
-        .border({ width: 1.6, color: active ? '#0A1622' : '#E8F0F7' })
+        .border({ width: 1.6, color: active ? PulsePalette.textPrimary : '#E8F0F7' })
         .borderRadius({ topLeft: 7, topRight: 7, bottomLeft: 8, bottomRight: 8 })
         .position({ x: 1, y: 9 })
     }
@@ -132,7 +132,7 @@ export struct FloatingNavBar {
       .width(width)
       .height(height)
       .borderRadius(2.5)
-      .backgroundColor(active ? '#0A1622' : '#E8F0F7')
+      .backgroundColor(active ? PulsePalette.textPrimary : '#E8F0F7')
   }
 
   @Builder
@@ -156,13 +156,9 @@ export struct FloatingNavBar {
         .width(this.itemSize)
         .height(this.itemSize)
         .position({ x: this.getActiveBubbleX(), y: this.verticalPadding })
-        .linearGradient({
-          angle: 135,
-          colors: [['#A8EAFF', 0], ['#E0F8FF', 1]]
-        })
-        .border({ width: 1.2, color: '#F0FBFF' })
+        .backgroundColor(PulsePalette.surfaceRaised)
+        .border({ width: 1, color: PulsePalette.borderStrong })
         .borderRadius(22)
-        .shadow({ radius: 8, color: '#9BE2FF40', offsetX: 0, offsetY: 2 })
         .animation({ duration: 320, curve: Curve.Linear })
 
       Row({ space: this.itemGap }) {
@@ -172,8 +168,8 @@ export struct FloatingNavBar {
               Column()
                 .width(36)
                 .height(36)
-                .backgroundColor('#1A2833CC')
-                .border({ width: 1, color: '#2D4252' })
+                .backgroundColor(PulsePalette.surfaceAlt)
+                .opacity(0.7)
                 .borderRadius(18)
             }
 
@@ -191,10 +187,11 @@ export struct FloatingNavBar {
       .padding({ left: this.horizontalPadding, right: this.horizontalPadding, top: this.verticalPadding, bottom: this.verticalPadding })
     }
     .padding(5)
-    .backgroundColor('#0A141EB8')
-    .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
-    .border({ width: 1.2, color: '#2A3E4ECC' })
+    .backgroundColor(PulsePalette.surface)
+    .opacity(0.6)
+    .backgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THIN)
+    .border({ width: 1, color: PulsePalette.border })
     .borderRadius(32)
-    .shadow({ radius: 24, color: '#00000033', offsetX: 0, offsetY: 10 })
+    .shadow({ radius: 20, color: '#00000022', offsetX: 0, offsetY: 8 })
   }
 }
