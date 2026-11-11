@@ -1,10 +1,11 @@
-﻿﻿﻿﻿﻿﻿﻿﻿import {
+import {
   BOARD_END_MINUTE,
   BOARD_START_MINUTE,
   DAY_COLUMN_GAP,
   DAY_COLUMN_WIDTH,
   MINUTE_HEIGHT,
-  PulsePalette
+  PulsePalette,
+  SNAP_MINUTES
 } from '../../common/PulsePlanTheme';
 import { ScheduleItem } from '../../common/PulsePlanModels';
 import { addDays, clampMinute, formatMinuteLabel, snapMinute, toBoardOffset } from '../../common/PulsePlanUtils';
@@ -43,6 +44,8 @@ export struct ScheduleBlockCard {
   @State dragging: boolean = false;
   @State previewStartMinute: number = 0;
   @State previewDayDelta: number = 0;
+  @State resizing: boolean = false;
+  @State previewEndMinute: number = 0;
   private dragBaseStartMinute: number = 0;
 
   aboutToAppear(): void {
@@ -51,6 +54,7 @@ export struct ScheduleBlockCard {
 
   private handleItemChanged(): void {
     this.dragging = false;
+    this.resizing = false;
     this.previewStartMinute = this.item.startMinute;
     this.previewDayDelta = 0;
     this.dragBaseStartMinute = this.item.startMinute;
@@ -65,7 +69,8 @@ export struct ScheduleBlockCard {
   }
 
   private getCardHeight(): number {
-    return Math.max(this.getDuration() * MINUTE_HEIGHT, 20);
+    const end = this.resizing ? this.previewEndMinute : this.item.endMinute;
+    return Math.max((end - this.item.startMinute) * MINUTE_HEIGHT, 20);
   }
 
   private getRenderX(): number {
@@ -89,6 +94,7 @@ export struct ScheduleBlockCard {
 
   private resetPreview(): void {
     this.dragging = false;
+    this.resizing = false;
     this.previewStartMinute = this.item.startMinute;
     this.previewDayDelta = 0;
     this.dragBaseStartMinute = this.item.startMinute;
@@ -158,6 +164,14 @@ export struct ScheduleBlockCard {
       }
       .width('100%')
       .height('100%')
+      if (this.selected) {
+        Divider()
+          .width('34%')
+          .strokeWidth(2)
+          .color('#FFFFFF')
+          .position({ x: '33%', y: '82%' })
+          .hitTestBehavior(HitTestMode.None)
+      }
     }
     .padding({ 
       left: this.columnWidth > 100 ? 10 : 5, 
@@ -195,8 +209,15 @@ export struct ScheduleBlockCard {
     })
     .gesture(
       PanGesture({ direction: PanDirection.All, distance: 1 })
-        .onActionStart(() => {
+        .onActionStart((event: GestureEvent) => {
+          const finger = event.fingerList[0];
+          const startY = finger ? finger.localY - event.offsetY : 0;
+          this.resizing = this.selected && startY >= this.getCardHeight() - 8;
+          this.previewEndMinute = this.item.endMinute;
           this.onSelect(this.item.id);
+          if (this.resizing) {
+            return;
+          }
           this.dragging = true;
           this.onBlockDragStart(this.item.id);
           this.dragBaseStartMinute = this.item.startMinute;
@@ -204,17 +225,27 @@ export struct ScheduleBlockCard {
           this.previewDayDelta = 0;
         })
         .onActionUpdate((event: GestureEvent) => {
+          if (this.resizing) {
+            this.previewEndMinute = clampMinute(this.item.endMinute + snapMinute(event.offsetY / MINUTE_HEIGHT),
+              Math.min(this.item.startMinute + SNAP_MINUTES, BOARD_END_MINUTE), BOARD_END_MINUTE);
+            return;
+          }
           this.updatePreviewByGesture(event);
         })
         .onActionEnd(() => {
-          const targetDayKey: string = addDays(this.item.dayKey, this.previewDayDelta);
-          const targetStartMinute: number = this.previewStartMinute;
-          if (targetDayKey !== this.item.dayKey || targetStartMinute !== this.item.startMinute) {
-            this.onMove(this.item.id, targetDayKey, targetStartMinute);
-            return;
-          }
+          const resize = this.resizing;
+          const minuteDelta = this.previewEndMinute - this.item.endMinute;
+          const targetDayKey = addDays(this.item.dayKey, this.previewDayDelta);
+          const targetStartMinute = this.previewStartMinute;
           this.onBlockDragEnd();
           this.resetPreview();
+          if (resize) {
+            if (minuteDelta !== 0) {
+              this.onResize(this.item.id, minuteDelta);
+            }
+          } else if (targetDayKey !== this.item.dayKey || targetStartMinute !== this.item.startMinute) {
+            this.onMove(this.item.id, targetDayKey, targetStartMinute);
+          }
         })
         .onActionCancel(() => {
           this.onBlockDragEnd();

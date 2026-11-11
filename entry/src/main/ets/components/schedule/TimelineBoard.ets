@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿import {
   BOARD_END_MINUTE,
   BOARD_HEIGHT,
   BOARD_START_MINUTE,
@@ -254,8 +254,8 @@ export struct TimelineBoard {
           onSelect: this.onSelect,
           onMove: this.onMove,
           onResize: this.onResize,
-          onBlockDragStart: this.handleBlockDragStart.bind(this),
-          onBlockDragEnd: this.handleBlockDragEnd.bind(this)
+          onBlockDragStart: (scheduleId: number) => { this.handleBlockDragStart(scheduleId); },
+          onBlockDragEnd: () => { this.handleBlockDragEnd(); }
         })
       }, (item: ScheduleItem) => `${item.id}-${item.dayKey}-${item.startMinute}-${item.endMinute}`)
     }
