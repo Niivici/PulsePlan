@@ -1,4 +1,8 @@
-﻿﻿﻿﻿import { AISection } from '../components/ai/AISection';
+import {
+  AchievementStats, PlanItem, PlanPreview, Profile, ProfileUpdate,
+  PulsePlanApi, ReminderInput, ScheduleChange
+} from '../services/PulsePlanApi';
+import { AISection } from '../components/ai/AISection';
 import { AchievementSection } from '../components/achievement/AchievementSection';
 import { FloatingNavBar } from '../components/navigation/FloatingNavBar';
 import { OverviewSection } from '../components/overview/OverviewSection';
@@ -60,6 +64,22 @@ export struct PulsePlanHome {
   @State aiBanner: string = 'AI 已根据最近两周的拖拽与完成率，默认预留 20 分钟缓冲。';
   @State aiDetailMode: boolean = false;
   @State aiDetailShellVisible: boolean = false;
+  api?: PulsePlanApi;
+  onExit: () => void = () => {};
+  @State serverBusy: boolean = false;
+  @State serverMessage: string = '';
+  @State pendingPlan: PlanPreview | undefined = undefined;
+  @State profile: Profile | undefined = undefined;
+  @State profileName: string = '';
+  @State profileZone: string = '';
+  @State achievementStats: AchievementStats | undefined = undefined;
+  @State editing: boolean = false;
+  @State editId: number = 0;
+  @State editTitle: string = '';
+  @State editStart: string = '09:00';
+  @State editEnd: string = '09:30';
+  @State editReminder: string = '';
+  private refreshVersion: number = 0;
   private aiDetailShellTask: number = -1;
   private pageScroller: Scroller = new Scroller();
   @State topBarOpacity: number = 0.4;
@@ -67,6 +87,16 @@ export struct PulsePlanHome {
   private readonly statusBarHeight: number = 44;
 
   aboutToAppear(): void {
+    if (this.api) {
+      this.eventBlocks = [];
+      this.scheduleItems = [];
+      this.reminders = [];
+      this.selectedScheduleId = 0;
+      this.inputText = '';
+      this.aiBanner = '输入目标，生成可确认的 AI 排程建议。';
+      this.refreshConnectedData();
+      return;
+    }
     const seedBlocks: EventBlock[] = createSeedEventBlocks();
     const seedSchedules: ScheduleItem[] = createSeedSchedules(seedBlocks);
     this.eventBlocks = seedBlocks;
@@ -77,7 +107,380 @@ export struct PulsePlanHome {
   }
 
   aboutToDisappear(): void {
+    this.refreshVersion++;
     this.clearAIDetailShellTask();
+  }
+
+  private selectDate(date: string): void {
+    this.selectedDateKey = date;
+    if (this.api) {
+      this.refreshConnectedData();
+    }
+  }
+
+  private async refreshConnectedData(): Promise<void> {
+    const api = this.api;
+    if (!api) {
+      return;
+    }
+    const version = ++this.refreshVersion;
+    const day = this.selectedDateKey;
+    try {
+      const blocks = await api.blocks();
+      const schedules = await api.schedules(addDays(day, -45), addDays(day, 46));
+      const overview = await api.overview(day);
+      const stats = await api.achievements();
+      const profile = await api.profile();
+      if (version !== this.refreshVersion) {
+        return;
+      }
+      this.eventBlocks = blocks.map((block: EventBlock): EventBlock => ({
+        id: block.id, title: block.title, scene: block.scene, color: block.color,
+        preference: '', habitHint: '', aiHint: '', quickLaunch: ''
+      }));
+      this.scheduleItems = schedules.map((item: ScheduleItem): ScheduleItem => ({
+        id: item.id, eventBlockId: item.eventBlockId, title: item.title, scene: item.scene, dayKey: item.dayKey,
+        startMinute: item.startMinute, endMinute: item.endMinute, color: item.color, completed: item.completed,
+        modeName: '', quickLaunch: '', aiSuggestion: '', flexibility: ''
+      }));
+      this.reminders = overview.reminders;
+      this.achievementStats = stats;
+      if (!this.profile) {
+        this.profileName = profile.displayName;
+        this.profileZone = profile.timeZone;
+      }
+      this.profile = profile;
+      if (!this.getSelectedSchedule()) {
+        const first = this.scheduleItems.find((item: ScheduleItem) => item.dayKey === day);
+        this.selectedScheduleId = first ? first.id : 0;
+      }
+    } catch (error) {
+      if (version === this.refreshVersion) {
+        this.serverMessage = (error as Error).message;
+      }
+    }
+  }
+
+  private async runConnected(action: (api: PulsePlanApi) => Promise<void>): Promise<void> {
+    const api = this.api;
+    if (!api || this.serverBusy) {
+      return;
+    }
+    this.serverBusy = true;
+    this.serverMessage = '';
+    try {
+      await action(api);
+    } catch (error) {
+      this.serverMessage = (error as Error).message;
+    } finally {
+      this.serverBusy = false;
+    }
+  }
+
+  private saveScheduleChange(id: number, input: ScheduleChange): void {
+    this.runConnected(async (api: PulsePlanApi) => {
+      const saved = await api.changeSchedule(id, input);
+      this.selectedDateKey = saved.dayKey;
+      this.selectedScheduleId = saved.id;
+      await this.refreshConnectedData();
+    });
+  }
+
+  private generateConnectedPlan(prompt: string): void {
+    this.getUIContext().getFocusController().clearFocus();
+    this.runConnected(async (api: PulsePlanApi) => {
+      this.pendingPlan = await api.generate(prompt, this.selectedDateKey);
+      this.lastPromptText = prompt;
+    });
+  }
+
+  private confirmConnectedPlan(): void {
+    const plan = this.pendingPlan;
+    if (!plan) {
+      return;
+    }
+    this.runConnected(async (api: PulsePlanApi) => {
+      const items = await api.confirm(plan.id);
+      this.pendingPlan = undefined;
+      this.inputText = '';
+      if (items.length > 0) {
+        this.selectedDateKey = items[0].dayKey;
+        this.selectedScheduleId = items[0].id;
+      }
+      this.aiBanner = '已保存 ' + items.length + ' 条 AI 排程。';
+      this.resetAIDetailShell();
+      this.currentNavIndex = NAV_SCHEDULE;
+      await this.refreshConnectedData();
+    });
+  }
+
+  private openEditor(id: number): void {
+    const item = id === 0 ? undefined : this.getSelectedSchedule();
+    this.editId = item ? item.id : 0;
+    this.editTitle = item ? item.title : '';
+    this.editStart = item ? this.displayTime(item.startMinute) : '09:00';
+    this.editEnd = item ? this.displayTime(item.endMinute) : '09:30';
+    const reminder = this.reminders.find((entry: ReminderItem) => entry.scheduleItemId === this.editId);
+    this.editReminder = reminder ? this.displayTime(reminder.minute) : '';
+    this.editing = true;
+  }
+
+  private displayTime(minute: number): string {
+    const hour = Math.floor(minute / 60);
+    const remainder = minute % 60;
+    return (hour < 10 ? '0' : '') + hour + ':' + (remainder < 10 ? '0' : '') + remainder;
+  }
+
+  private parseTime(value: string): number {
+    if (value === '24:00') {
+      return 1440;
+    }
+    if (!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
+      return -1;
+    }
+    const parts = value.split(':');
+    return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+
+  private saveEditor(): void {
+    const start = this.parseTime(this.editStart);
+    const end = this.parseTime(this.editEnd);
+    const title = this.editTitle.trim();
+    if (title.length === 0 || start < 0 || end <= start) {
+      this.serverMessage = '请输入标题和有效的开始、结束时间，格式为 HH:mm。';
+      return;
+    }
+    const id = this.editId;
+    const day = this.selectedDateKey;
+    this.runConnected(async (api: PulsePlanApi) => {
+      const input: ScheduleChange = { title: title, startMinute: start, endMinute: end };
+      let saved: ScheduleItem;
+      if (id > 0) {
+        saved = await api.changeSchedule(id, input);
+      } else {
+        input.dayKey = day;
+        saved = await api.createSchedule(input);
+      }
+      this.selectedScheduleId = saved.id;
+      this.editing = false;
+      await this.refreshConnectedData();
+    });
+  }
+
+  private removeSelected(): void {
+    const item = this.scheduleItems.find((schedule: ScheduleItem) => schedule.id === this.editId);
+    if (!item) {
+      return;
+    }
+    this.runConnected(async (api: PulsePlanApi) => {
+      await api.deleteSchedule(item.id);
+      this.editing = false;
+      await this.refreshConnectedData();
+    });
+  }
+
+  private saveReminder(): void {
+    const id = this.editId;
+    const minute = this.parseTime(this.editReminder);
+    if (id === 0 || minute < 0 || minute >= 1440) {
+      this.serverMessage = '请输入有效的提醒时间，格式为 HH:mm。';
+      return;
+    }
+    const input: ReminderInput = { title: this.editTitle, minute: minute, intensity: '普通' };
+    this.runConnected(async (api: PulsePlanApi) => {
+      await api.setReminders(id, [input]);
+      await this.refreshConnectedData();
+    });
+  }
+
+  private saveProfile(): void {
+    const input: ProfileUpdate = { displayName: this.profileName, timeZone: this.profileZone };
+    this.runConnected(async (api: PulsePlanApi) => {
+      const profile = await api.updateProfile(input);
+      this.profile = profile;
+      this.profileName = profile.displayName;
+      this.profileZone = profile.timeZone;
+      this.serverMessage = '个人设置已保存。';
+    });
+  }
+
+  private exitAccount(): void {
+    this.runConnected(async (api: PulsePlanApi) => {
+      try {
+        await api.logout();
+      } finally {
+        this.onExit();
+      }
+    });
+  }
+
+  @Builder
+  private connectedOverview(): void {
+    Column({ space: 12 }) {
+      Text('日程概览').fontSize(24).fontColor(PulsePalette.textPrimary)
+      Text('今日完成 ' + this.getTodayCompletion()).fontColor(PulsePalette.textSecondary)
+      Text('本周已安排 ' + this.getWeekFocusHours()).fontColor(PulsePalette.textSecondary)
+      if (this.eventBlocks.length > 0) {
+        Text('事件块').fontSize(18).fontColor(PulsePalette.textPrimary)
+        ForEach(this.eventBlocks, (block: EventBlock) => {
+          Button(block.title).onClick(() => {
+            this.handleSelectEventBlock(block.id);
+            this.currentNavIndex = NAV_SCHEDULE;
+          })
+        }, (block: EventBlock) => block.id.toString())
+      }
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  private connectedAi(): void {
+    Column({ space: 14 }) {
+      Text('AI 排程').fontSize(24).fontColor(PulsePalette.textPrimary)
+      Text('告诉我目标、日期和预计时长。确认建议后，日程才会保存。')
+        .fontColor(PulsePalette.textSecondary)
+      TextArea({ placeholder: '例如：明天下午安排 30 分钟阅读', text: this.inputText })
+        .height(110)
+        .backgroundColor(PulsePalette.surfaceRaised)
+        .fontColor(PulsePalette.textPrimary)
+        .placeholderColor(PulsePalette.textSecondary)
+        .caretColor(PulsePalette.accentSky)
+        .onChange((value: string) => { this.inputText = value; })
+      Button(this.serverBusy ? '正在生成…' : '生成排程')
+        .enabled(!this.serverBusy && this.inputText.trim().length > 0)
+        .onClick(() => { this.handleCreateFromPrompt(); })
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  private connectedEditor(): void {
+    Column({ space: 8 }) {
+      Row({ space: 8 }) {
+        Button('新增日程').enabled(!this.serverBusy).onClick(() => { this.openEditor(0); })
+        Button('编辑日程').enabled(!this.serverBusy && this.selectedScheduleId > 0)
+          .onClick(() => { this.openEditor(this.selectedScheduleId); })
+      }
+      if (this.editing) {
+        TextInput({ placeholder: '日程标题', text: this.editTitle })
+          .backgroundColor(PulsePalette.surfaceRaised)
+          .fontColor(PulsePalette.textPrimary)
+          .placeholderColor(PulsePalette.textSecondary)
+          .caretColor(PulsePalette.accentSky)
+          .border({ width: 1, color: PulsePalette.borderStrong })
+          .onChange((value: string) => { this.editTitle = value; })
+        Row({ space: 8 }) {
+          TextInput({ placeholder: '开始 HH:mm', text: this.editStart }).layoutWeight(1)
+            .backgroundColor(PulsePalette.surfaceRaised)
+            .fontColor(PulsePalette.textPrimary)
+            .placeholderColor(PulsePalette.textSecondary)
+            .caretColor(PulsePalette.accentSky)
+            .border({ width: 1, color: PulsePalette.borderStrong })
+            .onChange((value: string) => { this.editStart = value; })
+          TextInput({ placeholder: '结束 HH:mm', text: this.editEnd }).layoutWeight(1)
+            .backgroundColor(PulsePalette.surfaceRaised)
+            .fontColor(PulsePalette.textPrimary)
+            .placeholderColor(PulsePalette.textSecondary)
+            .caretColor(PulsePalette.accentSky)
+            .border({ width: 1, color: PulsePalette.borderStrong })
+            .onChange((value: string) => { this.editEnd = value; })
+        }
+        Row({ space: 8 }) {
+          Button('保存').enabled(!this.serverBusy).onClick(() => { this.saveEditor(); })
+          Button('取消').enabled(!this.serverBusy).onClick(() => { this.editing = false; })
+          if (this.editId > 0) {
+            Button('删除日程').enabled(!this.serverBusy).onClick(() => { this.removeSelected(); })
+          }
+        }
+        if (this.editId > 0) {
+          Row({ space: 8 }) {
+            TextInput({ placeholder: '提醒 HH:mm', text: this.editReminder }).layoutWeight(1)
+              .backgroundColor(PulsePalette.surfaceRaised)
+              .fontColor(PulsePalette.textPrimary)
+              .placeholderColor(PulsePalette.textSecondary)
+              .caretColor(PulsePalette.accentSky)
+              .border({ width: 1, color: PulsePalette.borderStrong })
+              .onChange((value: string) => { this.editReminder = value; })
+            Button('保存提醒').enabled(!this.serverBusy).onClick(() => { this.saveReminder(); })
+          }
+        }
+      }
+    }
+    .width('100%')
+  }
+
+  @Builder
+  private connectedAchievements(): void {
+    Column({ space: 10 }) {
+      Text('成就').fontSize(24).fontColor(PulsePalette.textPrimary)
+      if (this.achievementStats) {
+        Text('已完成日程 ' + this.achievementStats.completed + ' / ' + this.achievementStats.total)
+          .fontColor(PulsePalette.textPrimary)
+        Text('有完成记录的天数 ' + this.achievementStats.activeDays).fontColor(PulsePalette.textPrimary)
+      }
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  private connectedProfile(): void {
+    Column({ space: 10 }) {
+      if (this.profile) {
+        Text(this.profile.username).fontSize(24).fontColor(PulsePalette.textPrimary)
+        TextInput({ placeholder: '显示名称', text: this.profileName })
+          .backgroundColor(PulsePalette.surfaceRaised)
+          .fontColor(PulsePalette.textPrimary)
+          .placeholderColor(PulsePalette.textSecondary)
+          .caretColor(PulsePalette.accentSky)
+          .border({ width: 1, color: PulsePalette.borderStrong })
+          .onChange((value: string) => { this.profileName = value; })
+        TextInput({ placeholder: '时区，例如 Asia/Shanghai', text: this.profileZone })
+          .backgroundColor(PulsePalette.surfaceRaised)
+          .fontColor(PulsePalette.textPrimary)
+          .placeholderColor(PulsePalette.textSecondary)
+          .caretColor(PulsePalette.accentSky)
+          .border({ width: 1, color: PulsePalette.borderStrong })
+          .onChange((value: string) => { this.profileZone = value; })
+        Button('保存设置').enabled(!this.serverBusy).onClick(() => { this.saveProfile(); })
+      }
+      Button('退出登录').enabled(!this.serverBusy).onClick(() => { this.exitAccount(); })
+    }
+    .width('100%')
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  private serverFeedback(): void {
+    Column({ space: 8 }) {
+      if (this.serverMessage.length > 0) {
+        Text(this.serverMessage).fontColor(PulsePalette.textPrimary)
+        Button('关闭提示').onClick(() => { this.serverMessage = ''; })
+      }
+      if (this.pendingPlan) {
+        Text(this.pendingPlan.title).fontSize(18).fontColor(PulsePalette.textPrimary)
+        Scroll() {
+          Column({ space: 6 }) {
+            ForEach(this.pendingPlan.items, (item: PlanItem) => {
+              Text(item.dayKey + ' ' + this.displayTime(item.startMinute) + '–' +
+                this.displayTime(item.endMinute) + ' ' + item.title).fontColor(PulsePalette.textPrimary)
+            }, (item: PlanItem) => item.dayKey + ':' + item.startMinute)
+          }
+        }
+        .constraintSize({ maxHeight: 210 })
+        Row({ space: 8 }) {
+          Button('确认保存').enabled(!this.serverBusy).onClick(() => { this.confirmConnectedPlan(); })
+          Button('取消').enabled(!this.serverBusy).onClick(() => { this.pendingPlan = undefined; })
+        }
+      }
+    }
+    .width('90%')
+    .padding(12)
+    .margin({ bottom: 76 })
+    .borderRadius(14)
+    .backgroundColor(PulsePalette.background)
   }
 
   private scrollToPageTop(): void {
@@ -193,10 +596,10 @@ export struct PulsePlanHome {
 
   private shiftTimeline(offset: number): void {
     if (this.currentViewIndex === VIEW_MONTH) {
-      this.selectedDateKey = addMonths(this.selectedDateKey, offset);
+      this.selectDate(addMonths(this.selectedDateKey, offset));
       return;
     }
-    this.selectedDateKey = addDays(this.selectedDateKey, this.currentViewIndex === VIEW_WEEK ? offset * 7 : offset);
+    this.selectDate(addDays(this.selectedDateKey, this.currentViewIndex === VIEW_WEEK ? offset * 7 : offset));
   }
 
   private handleSelectSchedule(scheduleId: number): void {
@@ -209,7 +612,7 @@ export struct PulsePlanHome {
       this.scheduleItems.find((item: ScheduleItem) => item.eventBlockId === eventBlockId);
     if (matched) {
       this.selectedScheduleId = matched.id;
-      this.selectedDateKey = matched.dayKey;
+      this.selectDate(matched.dayKey);
     }
     track('event_block_selected', `${eventBlockId}`);
   }
@@ -225,6 +628,10 @@ export struct PulsePlanHome {
       BOARD_START_MINUTE,
       BOARD_END_MINUTE - duration
     );
+    if (this.api) {
+      this.saveScheduleChange(scheduleId, { dayKey: targetDayKey, startMinute: nextStart, endMinute: nextStart + duration });
+      return;
+    }
     this.selectedDateKey = targetDayKey;
     this.scheduleItems = this.scheduleItems.map((item: ScheduleItem) => {
       if (item.id !== scheduleId) {
@@ -250,6 +657,15 @@ export struct PulsePlanHome {
   }
 
   private handleResizeSchedule(scheduleId: number, minuteDelta: number): void {
+    if (this.api) {
+      const item = this.scheduleItems.find((schedule: ScheduleItem) => schedule.id === scheduleId);
+      if (item) {
+        const end = clampMinute(Math.round((item.endMinute + minuteDelta) / SNAP_MINUTES) * SNAP_MINUTES,
+          item.startMinute + SNAP_MINUTES, BOARD_END_MINUTE);
+        this.saveScheduleChange(scheduleId, { endMinute: end });
+      }
+      return;
+    }
     this.scheduleItems = this.scheduleItems.map((item: ScheduleItem) => {
       if (item.id !== scheduleId) {
         return item;
@@ -283,6 +699,10 @@ export struct PulsePlanHome {
       return;
     }
     const normalizedPrompt: string = this.inputText.trim();
+    if (this.api) {
+      this.generateConnectedPlan(normalizedPrompt);
+      return;
+    }
     const plan = createPlanFromPrompt(normalizedPrompt, this.selectedDateKey, this.scheduleItems);
     this.eventBlocks = [plan.eventBlock, ...this.eventBlocks];
     this.scheduleItems = [...this.scheduleItems, ...plan.scheduleItems]
@@ -297,6 +717,10 @@ export struct PulsePlanHome {
   }
 
   private handleEmergencyInsert(): void {
+    if (this.api) {
+      this.generateConnectedPlan('今天安排一个 30 分钟的紧急事项，尽量使用最早的空闲时段。');
+      return;
+    }
     const urgentItem: ScheduleItem = {
       id: Number(`${Date.now()}88`),
       eventBlockId: 101,
@@ -325,6 +749,10 @@ export struct PulsePlanHome {
       return;
     }
     const nextCompleted: boolean = !selected.completed;
+    if (this.api) {
+      this.saveScheduleChange(selected.id, { completed: nextCompleted });
+      return;
+    }
     this.scheduleItems = this.scheduleItems.map((item: ScheduleItem) => {
       if (item.id !== selected.id) {
         return item;
@@ -404,7 +832,7 @@ export struct PulsePlanHome {
           .backgroundColor(PulsePalette.accentSky)
           .borderRadius(14)
 
-        Text('手机 · 手表')
+        Text(this.api ? '已连接服务' : '本地演示')
           .fontSize(11)
           .fontColor(PulsePalette.textMuted)
       }
@@ -415,7 +843,9 @@ export struct PulsePlanHome {
 
   @Builder
   private buildCurrentSection(): void {
-    if (this.currentNavIndex === NAV_OVERVIEW) {
+    if (this.currentNavIndex === NAV_OVERVIEW && this.api) {
+      this.connectedOverview()
+    } else if (this.currentNavIndex === NAV_OVERVIEW) {
       OverviewSection({
         bannerText: this.aiBanner,
         todayCompletion: this.getTodayCompletion(),
@@ -431,6 +861,9 @@ export struct PulsePlanHome {
         }
       })
     } else if (this.currentNavIndex === NAV_SCHEDULE) {
+      if (this.api) {
+        this.connectedEditor()
+      }
       ScheduleSection({
         currentViewIndex: this.currentViewIndex,
         selectedDateKey: this.selectedDateKey,
@@ -465,7 +898,7 @@ export struct PulsePlanHome {
           this.handleResizeSchedule(scheduleId, minuteDelta);
         },
         onSelectDay: (dateKey: string) => {
-          this.selectedDateKey = dateKey;
+          this.selectDate(dateKey);
         },
         onToggleComplete: () => {
           this.handleToggleComplete();
@@ -480,6 +913,8 @@ export struct PulsePlanHome {
           this.handleSelectEventBlock(eventBlockId);
         }
       })
+    } else if (this.currentNavIndex === NAV_AI && this.api) {
+      this.connectedAi()
     } else if (this.currentNavIndex === NAV_AI) {
       AISection({
         inputText: this.inputText,
@@ -523,6 +958,10 @@ export struct PulsePlanHome {
           this.closeAIDetail();
         }
       })
+    } else if (this.currentNavIndex === NAV_ACHIEVEMENT && this.api) {
+      this.connectedAchievements()
+    } else if (this.currentNavIndex === NAV_PROFILE && this.api) {
+      this.connectedProfile()
     } else if (this.currentNavIndex === NAV_ACHIEVEMENT) {
       AchievementSection({
         scheduleItems: this.scheduleItems,
@@ -535,6 +974,7 @@ export struct PulsePlanHome {
         scheduleItems: this.scheduleItems,
         selectedScheduleId: this.selectedScheduleId
       })
+      Button('返回登录').onClick(() => { this.onExit(); })
     }
   }
 
@@ -610,6 +1050,10 @@ export struct PulsePlanHome {
           .backgroundColor(PulsePalette.background)
           .opacity(this.topBarOpacity)
           .backgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THIN)
+      }
+
+      if (this.api && (this.pendingPlan || this.serverMessage.length > 0)) {
+        this.serverFeedback()
       }
 
       FloatingNavBar({
